@@ -1,22 +1,22 @@
-// Require our dependencies
+// Dependencies
 var express = require("express");
 var mongoose = require("mongoose");
 var exphbs = require("express-handlebars");
-const cheerio = require("cheerio"); //Scraper
+//const cheerio = require("cheerio"); //Scraper
 
 // Require all models
 //const db = require("./models");
 
-// Set up our port to be either the host's designated port, or 3000
-var PORT = process.env.PORT || 3000;
+// Port configuration for local/Heroku
+const PORT = process.env.PORT || process.argv[2] || 3000;
 
-// Instantiate our Express App
+// Initialize Express
 var app = express();
 
 // Require our routes
 var routes = require("./routes");
 
-// Parse request body as JSON
+// Use body-parser for handling form submissions
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 // Make public a static folder

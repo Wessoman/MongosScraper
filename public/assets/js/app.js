@@ -1,75 +1,79 @@
-//Handle Scrape button
-$("#scrape").on("click", function() {
-    $.ajax({
-        method: "GET",
-        url: "/scrape",
-    }).done(function(data) {
-        console.log(data)
-        window.location = "/"
-    })
-});
+$(document).ready(function () {
 
-//Set clicked nav option to active
-$(".navbar-nav li").click(function() {
-   $(".navbar-nav li").removeClass("active");
-   $(this).addClass("active");
-});
-
-//Handle Save Article button
-$(".save").on("click", function() {
-    var thisId = $(this).attr("data-id");
-    $.ajax({
-        method: "POST",
-        url: "/articles/save/" + thisId
-    }).done(function(data) {
-        window.location = "/"
-    })
-});
-
-//Handle Delete Article button
-$(".delete").on("click", function() {
-    var thisId = $(this).attr("data-id");
-    $.ajax({
-        method: "POST",
-        url: "/articles/delete/" + thisId
-    }).done(function(data) {
-        window.location = "/saved"
-    })
-});
-
-//Handle Save Note button
-$(".saveNote").on("click", function() {
-    var thisId = $(this).attr("data-id");
-    if (!$("#noteText" + thisId).val()) {
-        alert("please enter a note to save")
-    }else {
-      $.ajax({
-            method: "POST",
-            url: "/notes/save/" + thisId,
-            data: {
-              text: $("#noteText" + thisId).val()
+    $(".save").on("click", function(){
+        const id = $(this).data("id")
+        $.ajax({
+            url: `/news/save/${id}`,
+            type: 'PUT',
+            success: function(result) {
+                location.reload();
             }
-          }).done(function(data) {
-              // Log the response
-              console.log(data);
-              // Empty the notes section
-              $("#noteText" + thisId).val("");
-              $(".modalNote").modal("hide");
-              window.location = "/saved"
-          });
-    }
-});
+        });      
+    });
 
-//Handle Delete Note button
-$(".deleteNote").on("click", function() {
-    var noteId = $(this).attr("data-note-id");
-    var articleId = $(this).attr("data-article-id");
-    $.ajax({
-        method: "DELETE",
-        url: "/notes/delete/" + noteId + "/" + articleId
-    }).done(function(data) {
-        console.log(data)
-        $(".modalNote").modal("hide");
-        window.location = "/saved"
+    $(".unsave").on("click", function(){
+        const id = $(this).data("id")
+        $.ajax({
+            url: `/news/unsave/${id}`,
+            type: 'PUT',
+            success: function(result) {
+                location.reload();
+            }
+        });
+    });
+
+    $(".scrape").on("click", function(){
+        $.get("/scrape", (data, status)=>{
+            if(data.numOfnewItems>0){
+                $(".report").text(`${data.numOfnewItems} more articles added`)
+            } 
+            $(".articleCounter").modal("show");
+            $('.articleCounter').on('hidden.bs.modal', function () {
+                location.reload();
+            })
+            
+        })
+    });
+
+    $(".addComment").on("click", function(){
+        $("#commentModal").on("show.bs.modal", function (event) {        
+            const commentButton = $(event.relatedTarget) 
+            const id = commentButton.data("id")
+            $(this).find(".modal-title").text(`Comments for article: ${id}`);
+            $(this).find(".comment-save").data("id",id);
+            $.get(`/comments/read/${id}`, (data, status)=>{
+                $(".comment-container").empty();
+                const comments = data.notes;
+                comments.forEach((comment)=>{
+                    const commentContent = $("<li class='list-group-item'>").text(comment.content);
+                    const deleteBtn = $(`<button class="btn btn-primary disabled btn-sm comment-delete" data-noteid=${comment._id}>`).text("X")
+                    deleteBtn.css({"position": "absolute", "right":"1%"})
+                    commentContent.append(deleteBtn)
+                    $(".comment-container").append(commentContent)
+                })
+            })  
+        })        
     })
-});
+
+    $(".comment-save").on("click", function(event){
+        event.preventDefault()
+        const content = $(".commentText").val().trim();
+        const id = $(this).data("id")
+        if(content){
+            $.post(`/comments/save/${id}`,{content}, function(data, status){
+                $(".commentText").val("");
+            })
+        }
+    })  
+
+    $(".comment-container").on("click", ".comment-delete",function(event){
+        const id = $(this).data("noteid")
+        $.ajax({
+            url: `/comments/delete/${id}`,
+            type: 'DELETE',
+            success: function(result) {
+                location.reload();
+            }
+        });
+    })
+})

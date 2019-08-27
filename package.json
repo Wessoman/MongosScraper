@@ -1,21 +1,28 @@
 {
-  "name": "mongo-scraper",
+  "name": "MongoScraper",
   "version": "1.0.0",
-  "description": "Web app that lets users leave comments on the latest news.",
-  "main": "server.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Linette Hsu",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/QuanGao/MongoScraper.git"
+  },
+  "keywords": [],
+  "author": "",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/QuanGao/MongoScraper/issues"
+  },
+  "homepage": "https://github.com/QuanGao/MongoScraper#readme",
   "dependencies": {
-    "body-parser": "^1.17.2",
-    "cheerio": "^1.0.0-rc.1",
-    "express": "^4.15.3",
+    "body-parser": "^1.18.2",
+    "cheerio": "^1.0.0-rc.2",
+    "express": "^4.16.3",
     "express-handlebars": "^3.0.0",
-    "mongoose": "^4.10.6",
-    "morgan": "^1.7.0",
-    "request": "^2.81.0"
+    "mongoose": "^5.6.11",
+    "request": "^2.85.0"
   }
 }

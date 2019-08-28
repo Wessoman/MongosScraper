@@ -79,12 +79,12 @@ body {
 
 .card {
     border-radius: 0;
-    box-shadow: 3px 3px 20px lightslategrey;
+    box-shadow: 3px 3px 20px slategrey;
     margin: 20px 0;
 }
 
 .card .card-header {
-    background-color: #2196f3;
+    background-color: lightcoral;
     position: relative;
     padding-top: 30px;
     padding-bottom: 30px;
@@ -163,7 +163,7 @@ body {
 }
 
 .navbar-nav > li > a.scrape-new:active {
-    background: #e51c23;
+    background: purple;
 }
 
 .scrape-new {

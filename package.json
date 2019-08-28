@@ -17,12 +17,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/abalomenos/mongo_scraper.git"
+    "url": "git+https://github.com/Wessoman/MongosScraper.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/abalomenos/mongo_scraper/issues"
+    "url": "https://github.com/Wesoman/MongosScraper/issues"
   },
-  "homepage": "https://github.com/abalomenos/mongo_scraper#readme"
+  "homepage": "https://github.com/Wessoman/MongosScraper#readme"
 }

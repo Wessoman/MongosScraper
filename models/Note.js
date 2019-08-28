@@ -1,14 +1,17 @@
 
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+// Imports
+var mongoose = require("mongoose");
 
-const NoteSchema = new Schema ({
-    content:{
-        type: String,
-        trim: true
-    }
+// Save a reference to the Schema constructor
+var Schema = mongoose.Schema;
 
-},{timestamps: true})
+// Using the Schema constructor, create a new NoteSchema object
+var NoteSchema = new Schema({
+    body: String
+});
 
-const Note = mongoose.model("Note", NoteSchema);
+// This creates our model from the above schema, using mongoose's model method
+var Note = mongoose.model("Note", NoteSchema);
+
+// Export the Note model
 module.exports = Note;

@@ -1,24 +1,59 @@
-const mongoose = require("mongoose")
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoHeadlines";
-const express = require("express");
-const app = express();
-const PORT = process.env.PORT || 3000;
-const exphbs = require("express-handlebars");
-const bodyParser = require("body-parser");
 
-app.engine("handlebars", exphbs({defaultLayout: "main"}));
-app.set("view engine", "handlebars");
+// ************** Imports ********************
+var express = require("express");
+var exphbs = require("express-handlebars");
+var logger = require("morgan");
+var mongoose = require("mongoose");
+// ************** Imports End ********************
+
+
+// Server Port - try Heroku first
+var PORT = process.env.PORT || 3000;
+
+
+// Initialize Express
+var app = express();
+
+
+// ************** Configure Middleware ********************
+
+// Use morgan logger for logging requests
+app.use(logger("dev"));
+
+// Parse request body as JSON
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Make public a static folder
 app.use(express.static("public"));
 
-mongoose.Promise = Promise;
-mongoose.connect(MONGODB_URI);
+// Handlebars
+app.engine(
+    "handlebars",
+    exphbs({
+        defaultLayout: "main",
+        layoutsDir: __dirname + '/views/layouts/',
+        partialsDir: __dirname + '/views/partials/'
+    })
+);
+app.set("view engine", "handlebars");
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+// Connect to the Mongo DB - try Heroku first
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/headlinesDB";
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true });
 
-require("./routes/htmlRoutes.js")(app);
-require("./routes/apiRoutes.js")(app);
+// ************** Configure Middleware End ********************
 
+
+// Routes
+require("./routes/apiRoutes")(app);
+require("./routes/htmlRoutes")(app);
+
+
+// Start the server
 app.listen(PORT, function() {
-    console.log("App listening on PORT " + PORT);
+    console.log("App running on port " + PORT + "!");
 });
+
+
+module.exports = app;

@@ -1,127 +1,161 @@
-const request = require("request");
-const cheerio = require("cheerio");
-const db = require("../models");
 
-module.exports = function (app) {
-    app.get("/scrape", (req, res) => {
-        request("https://www.pcgamer.com/news/", function (error, response, html) {
-            const $ = cheerio.load(html);
-            let results = [];
-            $(".listingResult").each((i, element) => {
-                if (i > 0) {
-                    const title = $(element).find(".article-name").text().trim();
-                    const author = $(element).find(".byline span").last().text().trim();
-                    const time = $(element).find(".published-date").attr("datetime");
-                    const summary = $(element).find(".synopsis").clone().children().remove().end().text().trim();
-                    const link = $(element).children("a").attr("href");
-                    const photoURL = $(element).find("img").data("src");
-                    results.push({title,author,time,summary,link,photoURL})       
-                }
-            });
-            db.News.find({}, "-_id title", (err, existingNews) => {
-                if (err) throw err;
-                const existingTitles = new Set(existingNews.map(a => a.title));
-                const newResults = results.filter(b => {
-                    return !existingTitles.has(b.title)
+// ************** Imports ********************
+var axios = require("axios");
+var cheerio = require("cheerio");
+
+// Require all models
+var db = require("../models");
+// ************** Imports End ********************
+
+module.exports = function(app) {
+
+
+    // A GET route for scraping the website
+    app.get("/api/fetch", function(req, res) {
+        // First, we grab the body of the html with axios
+        axios.get("https://www.washingtonpost.com/").then(function(response) {
+            // Then, we load that into cheerio and save it to $ for a shorthand selector
+            var $ = cheerio.load(response.data);
+            // Now, we grab every headline within an article tag, and do the following:
+            $(".headline").each(function() {
+                // Save an empty result object
+                var result = {};
+                // Add the text and href of every link, and save them as properties of the result object
+                result.headline = $(this)
+                    .children("a")
+                    .text()
+                    .trim();
+                result.url = $(this)
+                    .children("a")
+                    .attr("href");
+                result.summary = $(this)
+                    .siblings(".blurb");
+                    if (result.summary == "") {
+                        result.summary = "No summary";
+                    } else {
+                        result.summary = $(this)
+                        .text()
+                        .trim();
+                    }
+                // Create a new Article using the `result` object built from scraping
+                db.Article.create(result)
+                .catch(function(err) {
+                    // If an error occurred, log it
+                    console.log(err);
                 });
-                const numOfnewItems = newResults.length;
-                db.News.create(newResults, function (err, data) {
-                    if (err) throw err;
-                    res.json({
-                        numOfnewItems
-                    })
-                })
-            })
+            });
+            res.send("Scrape Complete");
         });
     });
 
-    app.put("/news/save/:id", (req, res) => {
-        db.News.findOneAndUpdate({
+
+    // Get articles base on query
+    app.get("/api/articles", function(req, res) {
+        var articles = req.query;        
+            db.Article.find(articles)
+            .then(function(dbArticle) {
+                res.json(dbArticle);
+            })
+            .catch(function(err) {
+                res.json(err);
+            });
+    });
+
+
+    // Get Note base on ID
+    app.get("/api/note/:id", function(req, res) {      
+            db.Note.findOne({ _id: req.params.id })
+            .then(function(dbNote) {
+                res.json(dbNote);
+            })
+            .catch(function(err) {
+                res.json(err);
+            });
+    });
+
+
+    // Get Article base on ID
+    app.get("/api/article/:id", function(req, res) {
+            db.Article.findOne({ _id: req.params.id })
+            .then(function(dbArticle) {
+                res.json(dbArticle);
+            })
+            .catch(function(err) {
+                res.json(err);
+            });
+    });
+
+
+    // Delete all Non-Saved Articles from the DB
+    app.delete("/api/articles-unsaved", function(req, res) {
+        db.Article.deleteMany({
+            saved: false
+        })
+        .catch(function(err) {
+            res.json(err);
+        });
+    });
+
+
+    // Delete all Saved Articles from the DB
+    app.delete("/api/articles-saved", function(req, res) {
+        db.Article.deleteMany({
+            saved: true
+        })
+        .catch(function(err) {
+            res.json(err);
+        });
+    });
+
+
+    // Update Note
+    app.post("/api/note/:id", function(req, res){
+        db.Note.findOneAndUpdate({
             _id: req.params.id
         }, {
-            $set: {
-                saved: true
-            }
-        }, {
-            new: true
-        }).then(
-            (docs) => {
-                if (docs) {
-                    res.json("article saved")
-                } else {
-                    res.json("article doesn't exist")
-                }
-            }
-        ).catch(err => res.json(err))
+            body: req.body.body
+        }).then(function(dbEmployee) {
+            res.json(dbEmployee);
+        });
     })
 
-    app.put("/news/unsave/:id", (req, res) => {
-        db.News.findOneAndUpdate({
-            _id: req.params.id
-        }, {
-            $set: {
+
+    // Save Article and Create New Note for Article
+    app.post("/api/article-save/:id", function(req, res) {
+        // Create a new Note
+        db.Note.create(req.body)
+        .then(function(dbNote) {
+            // Save Article and associate Note ID to it
+            return db.Article.findOneAndUpdate({
+                _id: req.params.id
+            }, {
+                saved: true,
+                note: dbNote._id
+            },
+            {
+                new: true
+            }
+            );
+        })
+        .catch(function(err) {
+            // If an error occurred, send it to the client
+            res.json(err);
+        });
+    });
+
+
+    // Un-Save Article and Remove Associated Note
+    app.post("/api/article-unsave/:id", function(req, res) {
+        db.Article.findOneAndUpdate({
+                _id: req.params.id
+            }, {
                 saved: false
             }
-        }, {
-            new: true
-        }).then(
-            (docs) => {
-                console.log("docs     " + docs)
-                if (docs) {
-                    res.json("article unsaved")
-                } else {
-                    res.json("article doesn't exist")
-                }
-            }
-        ).catch(err => res.json(err))
-    })
-
-    app.post("/comments/save/:id", (req, res) => {
-        db.Note.create(req.body).then(dbNote => {
-            return db.News.findOneAndUpdate({
-                _id: req.params.id
-            }, {
-                $push: {
-                    notes: dbNote._id
-                }
-            }, {
-                new: true
-            });
-
-        }).then(dbArticle => {
-            res.json(dbArticle)
-        }).catch(err => res.json(err))
-    })
-
-    app.get("/comments/read/:id", (req, res) => {
-        db.News.findOne({
-                _id: req.params.id
-            })
-            .populate("notes")
-            .then(function (dbNews) {
-                res.json(dbNews)
-            })
-            .catch(err => res.json(err))
-
-    })
-
-    app.delete("/comments/delete/:id", (req, res) => {
-        db.Note.findOneAndRemove({
-            _id: req.params.id
-        }).then(dbNote => {
-            return db.News.findOneAndUpdate({
-                notes: req.params.id
-            }, {
-                $pull: {
-                    notes: dbNote._id
-                }
-            }, {
-                new: true
-            });
-        }).then(dbAriticle => {
-            res.json(dbArticle)
-        }).catch(err => res.json(err))
-
-    })
+        )
+        .catch(function(err) {
+            // If an error occurred, send it to the client
+            res.json(err);
+        });
+    });
 
 }

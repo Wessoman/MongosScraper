@@ -1,28 +1,37 @@
-const request = require("request");
-const cheerio = require("cheerio");
-const db = require("../models");
 
-module.exports = function (app) {
-    
-    app.get("/", (req, res)=>{
-        db.News.find({
-            saved: false
-        }).sort({"time":-1}).exec((err, unsavedNews)=>{
-            if (err) throw err
+// ************** Imports ********************
+// Require all models
+var db = require("../models");
+// ************** Imports End ********************
+
+module.exports = function(app) {
+
+    // Route for index.html - Get all Non-Saved Articles from the DB
+    app.get("/", function(req, res) {
+        db.Article.find({ saved: false})
+        .then(function(dbArticle) {
             res.render("index", {
-                unsavedNews
+                articles: dbArticle
             });
         })
+        .catch(function(err) {
+            // If an error occurred, send it to the client
+            res.json(err);
+        });
     });
-
-    app.get("/saved", (req, res)=>{
-        db.News.find({
-            saved: true
-        }).sort({"time":-1}).exec((err, savedNews)=>{
-            if (err) throw err
+    
+    // Route for saved.html - Get all Saved Articles from the DB
+    app.get("/saved", function(req, res) {
+        db.Article.find({ saved: true})
+        .then(function(dbArticle) {
             res.render("saved", {
-                savedNews
+                articles: dbArticle
             });
         })
+        .catch(function(err) {
+            // If an error occurred, send it to the client
+            res.json(err);
+        });
     });
-}
+  
+};
